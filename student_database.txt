@@ -1,0 +1,1 @@
+STUDENT NAME: Glenn, LEVEL: Form 3, SUBJECT(S): ["'Mathematics', 'Science', 'English Language'"], IC/PASSPORT: A123456789, EMAIL: glennkhorigin@gmail.com, CONTACT NUMBER: 62123456789, ADDRESS: Parkhill, MONTH OF ENROLLMENT: December 
