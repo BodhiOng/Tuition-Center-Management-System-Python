@@ -1,4 +1,4 @@
-# Tuition center management system
+# Tuition Center Management System (CLI-based program)
 
 This program is meant to emulate a management system that stores information from admin, receptionist, tutor, and a student. For further clarity on functionalities and what this program does please read [PYP Assignment Briefing From Lecturer](https://github.com/BodhiOng/Programming-With-Python-Semester-1-Assignment/blob/main/Assignment%20Briefing%20%26%20Report/PYP%20Assignment%20Briefing%20From%20Lecturer.pdf) and [PYP Report](https://github.com/BodhiOng/Programming-With-Python-Semester-1-Assignment/blob/main/Assignment%20Briefing%20%26%20Report/PYP%20Report.docx). 
 
