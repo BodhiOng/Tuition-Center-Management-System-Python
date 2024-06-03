@@ -1,4 +1,4 @@
-USERNAME: bodhi, PASSWORD: password, STATUS: Admin
-USERNAME: stanley, PASSWORD: 366394, STATUS: Receptionist
 USERNAME: realxeng, PASSWORD: 849954, STATUS: Tutor
 USERNAME: glenn, PASSWORD: 12346, STATUS: Student
+USERNAME: stanley, PASSWORD: password, STATUS: Admin
+USERNAME: bodhi, PASSWORD: password, STATUS: Admin

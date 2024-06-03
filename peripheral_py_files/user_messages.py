@@ -4,6 +4,7 @@ Admin functions:
 2. Register/delete the receptionist
 3. View monthly income report of tutors
 4. Update profile
+5. Quit program
 '''
 
 receptionist_message = '''
@@ -13,6 +14,7 @@ Receptionist functions:
 3. Accept payment from students
 4. Delete students who had completed their studies
 5. Update profile
+6. Quit program
 '''
 
 tutor_message = '''
@@ -21,6 +23,7 @@ Tutor functions:
 2. Update/delete class information
 3. View list of students enrolled in your subject
 4. Update profile
+5. Quit program
 '''
 
 student_message = '''
@@ -30,6 +33,7 @@ Student functions:
 3. Delete pending request to receptionist
 4. View payment status
 5. Update profile
+6. Quit program
 '''
 
 subjects_list = '''
