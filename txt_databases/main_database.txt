@@ -2,3 +2,5 @@ USERNAME: realxeng, PASSWORD: 849954, STATUS: Tutor
 USERNAME: glenn, PASSWORD: 12346, STATUS: Student
 USERNAME: stanley, PASSWORD: password, STATUS: Admin
 USERNAME: bodhi, PASSWORD: password, STATUS: Admin
+USERNAME: james, PASSWORD: 586426, STATUS: Student
+USERNAME: kandis, PASSWORD: 542924, STATUS: Student

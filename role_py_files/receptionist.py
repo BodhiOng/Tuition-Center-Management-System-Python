@@ -22,15 +22,15 @@ def main():
         if sd_i[5].title() not in valid_months or not 1 <= int(sd_i[4]) <= 5:
             print("Invalid month or level.")
             return
+        
+        with open(databases["main_database.txt"], "r") as md_check:
+            lines = md_check.readlines()
+            for line in lines:
+                if nm.lower() in line.lower():
+                    print("Student already exists.")
+                    return
 
         with open(databases["main_database.txt"], "a") as md:
-            with open(databases["main_database.txt"], "r") as md_check:
-                lines = md_check.readlines()
-                for line in lines:
-                    if nm.lower() in line.lower():
-                        print("Student already exists.")
-                        return
-                
             md.write(f"USERNAME: {nm.lower()}, PASSWORD: {ps}, STATUS: Student\n")
 
         with open(databases["student_database.txt"], "a") as sd:
@@ -119,6 +119,8 @@ def main():
 
     def update_subject_enrollment_func():
         student_name = input("Student name: ")
+
+        print(subjects_list)
         new_subjects_string = str([input(f"New subject {i + 1}: ").title() for i in range(3)])
         update_subject_enrollment(student_name.title(), new_subjects_string)
 
