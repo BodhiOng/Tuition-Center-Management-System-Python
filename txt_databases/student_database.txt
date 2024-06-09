@@ -1,3 +1,2 @@
 STUDENT NAME: Glenn, LEVEL: Form 3, SUBJECT(S): Mathematics, Science, English Language Arts, IC/PASSPORT: A123456789, EMAIL: glennkhorigin@gmail.com, CONTACT NUMBER: 62123456789, ADDRESS: Parkhill, MONTH OF ENROLLMENT: December 
 STUDENT NAME: James, LEVEL: Form 4, SUBJECT(S): History, Mathematics, Science, IC/PASSPORT: E3323249, EMAIL: james@gmail.com, CONTACT NUMBER: 032848824, ADDRESS: Balakong, MONTH OF ENROLLMENT: December
-STUDENT NAME: Kandis, LEVEL: Form 2, SUBJECT(S): Science, Social Studies, Mathematics, IC/PASSPORT: J09430990, EMAIL: kandis@gmail.com, CONTACT NUMBER: 894904202498428, ADDRESS: Bukit Bintang, MONTH OF ENROLLMENT: July

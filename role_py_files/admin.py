@@ -201,3 +201,5 @@ def main():
 
         func = switch.get(admin_function, lambda: print("Invalid input"))
         func()
+
+        pass

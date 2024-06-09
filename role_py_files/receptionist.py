@@ -46,8 +46,10 @@ def main():
         updated_lines = []
         for line in lines:
             if nm in line:
-                start, end = line.index("["), line.index(", IC")
-                new_line = line[:start] + n_sjs + line[end:]
+                start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                end = line.index(", IC")
+                subjects_string = ", ".join(n_sjs)
+                new_line = line[:start] + subjects_string + line[end:]
                 updated_lines.append(new_line)
             else:
                 updated_lines.append(line)
@@ -55,29 +57,42 @@ def main():
         with open(databases["student_database.txt"], "w") as sd:
             sd.writelines(updated_lines)
 
-    def accept_student_payment(nm, lv, sj1, sj2, sj3):
+    def accept_student_payment(nm):
         with open(databases["student_database.txt"], "r") as sd:
             lines = sd.readlines()
 
         for line in lines:
             if nm in line:
-                lv_price = lv * 1000
-                total_price = lv_price + sum(subjects[sj] for sj in [sj1, sj2, sj3])
+                level_start = line.index("LEVEL: Form ") + len("LEVEL: Form ")
+                level_end = line.index(", SUBJECT(S):")
+                level = int(line[level_start:level_end].strip())
+
+                subjects_start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                subjects_end = line.index(", IC/PASSPORT:")
+                subjects_of_student = line[subjects_start:subjects_end].strip()
+                subjects_list = subjects_of_student.split(", ")
+
+                lv_price = level * 1000
+                subjects_price = sum(subjects.get(subject, 0) for subject in subjects_list)
+
+                total_price = lv_price + subjects_price
                 print(f"Student should pay: RM {total_price}")
 
                 if input("Confirm payment (Yes/No): ").lower() == "yes":
                     receipt = f'''
-    ----------Receipt----------
-    Excellent Tuition Centre (ETC)
+----------Receipt----------
+Excellent Tuition Centre (ETC)
 
-    Level price (Form {lv})___RM {lv_price}
-    Subjects price:
-    1. {sj1}___RM {subjects[sj1]}
-    2. {sj2}___RM {subjects[sj2]}
-    3. {sj3}___RM {subjects[sj3]}
+Level price (Form {level})___RM {lv_price}
+Subjects price:
+'''
+                    for subject in subjects_list:
+                        receipt += f"{subject}___RM {subjects.get(subject, 0)}\n"
 
-    Overall total price = RM {total_price}
-    '''
+                    receipt += f'''
+Overall total price = RM {total_price}
+Payment status updated to paid
+'''
                     print(receipt)
 
                     with open(databases["payment_status.txt"], "r") as pd:
@@ -85,7 +100,7 @@ def main():
 
                     with open(databases["payment_status.txt"], "w") as pd:
                         pd.writelines(line for line in lines if nm.title() not in line)
-                        pd.write(f"\nSTUDENT NAME: {nm.title()}, PAYMENT STATUS: Paid")
+                        pd.write(f"STUDENT NAME: {nm.title()}, PAYMENT STATUS: Paid\n")
                 return
 
     def delete_student(nm):
@@ -97,13 +112,20 @@ def main():
 
         update_file(databases["main_database.txt"], nm.lower())
         update_file(databases["student_database.txt"], nm.title())
+        update_file(databases["payment_status.txt"], nm.title())
 
     def change_profile(un, pw):
-        with open(databases["main_database.txt"], "r") as md:
-            lines = md.readlines()
-        with open(databases["main_database.txt"], "w") as md:
-            md.writelines(line for line in lines if un.lower() not in line)
-            md.write(f"\nUSERNAME: {un.lower()}, PASSWORD: {pw}, STATUS: Receptionist")
+        try:
+            with open(databases["main_database.txt"], "r+") as md:
+                lines = md.readlines()
+                md.seek(0)
+                md.truncate()
+                md.writelines(line for line in lines if un.lower().strip() not in line.lower().strip())
+                md.write(f"USERNAME: {un.lower().strip()}, PASSWORD: {pw}, STATUS: Receptionist\n")
+
+            print("Profile updated successfully.")
+        except Exception as e:
+            print(f"An error occurred while changing the profile: {e}")
 
     digits = string.digits
 
@@ -121,27 +143,67 @@ def main():
         student_name = input("Student name: ")
 
         print(subjects_list)
-        new_subjects_string = str([input(f"New subject {i + 1}: ").title() for i in range(3)])
-        update_subject_enrollment(student_name.title(), new_subjects_string)
+        new_subjects = [input(f"New subject {i + 1}: ").title() for i in range(3)]
+        update_subject_enrollment(student_name.title(), new_subjects)
 
     def accept_student_payment_func():
         student_name = input("Student name: ")
-        student_level = int(input("Student level: "))
-        subjects_input = [input(f"Subject {i + 1}: ").title() for i in range(3)]
-        accept_student_payment(student_name.title(), student_level, *subjects_input)
+        accept_student_payment(student_name.title())
 
     def delete_student_func():
         delete_student(input("Student name: "))
 
     def update_profile():
-        change_profile(input("Receptionist username: "), input("Receptionist new password: "))
+        try:
+            username = ""
+            with open(databases["logged_in_users.txt"], "r") as liu: 
+                lines = liu.readlines()
+                for line in lines:
+                    if "(" in line:
+                        username = line[0:line.index("(")]
+                        break
+
+            if not username:
+                print("No valid logged in user found.")
+                return
+            
+            old_password = input("Re-enter your old password to verify: ")
+            valid_user = False
+
+            with open(databases["main_database.txt"], "r") as md: 
+                lines = md.readlines()
+                for line in lines:
+                    if username in line and old_password in line:
+                        valid_user = True
+                        break
+
+            if not valid_user:
+                print("Invalid username or password.")
+                return
+            
+            new_password = input("Enter your new password: ")
+
+            change_profile(username, new_password)
+        except Exception as e:
+            print(f"An error occurred while updating the profile: {e}")
+    
+    def quit_program():
+        try:
+            with open(databases["logged_in_users.txt"], "w") as file:
+                file.truncate(0)
+
+            print("Exiting program....")
+            sys.exit()
+        except Exception as e:
+            print(f"An error occurred while quitting the program: {e}")
 
     switch = {
         1: register_student,
         2: update_subject_enrollment_func,
         3: accept_student_payment_func,
         4: delete_student_func,
-        5: update_profile
+        5: update_profile,
+        6: quit_program
     }
 
     print(receptionist_message)
