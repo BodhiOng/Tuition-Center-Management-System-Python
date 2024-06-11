@@ -1,5 +1,5 @@
 USERNAME: realxeng, PASSWORD: 849954, STATUS: Tutor
 USERNAME: glenn, PASSWORD: 12346, STATUS: Student
 USERNAME: stanley, PASSWORD: password, STATUS: Receptionist
-USERNAME: bodhi, PASSWORD: password, STATUS: Admin
+USERNAME: bodhi, PASSWORD: 123456, STATUS: Admin
 USERNAME: james, PASSWORD: 586426, STATUS: Student

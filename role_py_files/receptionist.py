@@ -23,107 +23,127 @@ def main():
             print("Invalid month or level.")
             return
         
-        with open(databases["main_database.txt"], "r") as md_check:
-            lines = md_check.readlines()
-            for line in lines:
-                if nm.lower() in line.lower():
-                    print("Student already exists.")
-                    return
+        try:
+            with open(databases["main_database.txt"], "r") as md_check:
+                lines = md_check.readlines()
+                for line in lines:
+                    if nm.lower() in line.lower():
+                        print("Student already exists.")
+                        return
 
-        with open(databases["main_database.txt"], "a") as md:
-            md.write(f"USERNAME: {nm.lower()}, PASSWORD: {ps}, STATUS: Student\n")
+            with open(databases["main_database.txt"], "a") as md:
+                md.write(f"USERNAME: {nm.lower()}, PASSWORD: {ps}, STATUS: Student\n")
 
-        with open(databases["student_database.txt"], "a") as sd:
-            sd.write(f"STUDENT NAME: {nm.title()}, LEVEL: Form {sd_i[4]}, SUBJECT(S): {', '.join(sjs)}, IC/PASSPORT: {sd_i[0]}, EMAIL: {sd_i[1]}, CONTACT NUMBER: {sd_i[2]}, ADDRESS: {sd_i[3]}, MONTH OF ENROLLMENT: {sd_i[5].title()}\n")
+            with open(databases["student_database.txt"], "a") as sd:
+                sd.write(f"STUDENT NAME: {nm.title()}, LEVEL: Form {sd_i[4]}, SUBJECT(S): {', '.join(sjs)}, IC/PASSPORT: {sd_i[0]}, EMAIL: {sd_i[1]}, CONTACT NUMBER: {sd_i[2]}, ADDRESS: {sd_i[3]}, MONTH OF ENROLLMENT: {sd_i[5].title()}\n")
 
-        with open(databases["payment_status.txt"], "a") as ps:
-            ps.write(f"STUDENT NAME: {nm.title()}, PAYMENT STATUS: Unpaid\n")
+            with open(databases["payment_status.txt"], "a") as ps:
+                ps.write(f"STUDENT NAME: {nm.title()}, PAYMENT STATUS: Unpaid\n")
+        except Exception as e:
+            print(f"An error occurred while registering the student: {e}")
 
     def update_subject_enrollment(nm, n_sjs):
-        with open(databases["student_database.txt"], "r") as sd:
-            lines = sd.readlines()
+        try:
+            with open(databases["student_database.txt"], "r") as sd:
+                lines = sd.readlines()
 
-        updated_lines = []
-        for line in lines:
-            if nm in line:
-                start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
-                end = line.index(", IC")
-                subjects_string = ", ".join(n_sjs)
-                new_line = line[:start] + subjects_string + line[end:]
-                updated_lines.append(new_line)
-            else:
-                updated_lines.append(line)
+            updated_lines = []
+            for line in lines:
+                if nm in line:
+                    start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                    end = line.index(", IC")
+                    subjects_string = ", ".join(n_sjs)
+                    new_line = line[:start] + subjects_string + line[end:]
+                    updated_lines.append(new_line)
+                else:
+                    updated_lines.append(line)
 
-        with open(databases["student_database.txt"], "w") as sd:
-            sd.writelines(updated_lines)
+            with open(databases["student_database.txt"], "w") as sd:
+                sd.writelines(updated_lines)
+        except Exception as e:
+            print(f"An error occurred while updating the subject enrollment: {e}")
 
     def accept_student_payment(nm):
-        with open(databases["student_database.txt"], "r") as sd:
-            lines = sd.readlines()
+        try:
+            with open(databases["student_database.txt"], "r") as sd:
+                lines = sd.readlines()
 
-        for line in lines:
-            if nm in line:
-                level_start = line.index("LEVEL: Form ") + len("LEVEL: Form ")
-                level_end = line.index(", SUBJECT(S):")
-                level = int(line[level_start:level_end].strip())
+            for line in lines:
+                if nm in line:
+                    level_start = line.index("LEVEL: Form ") + len("LEVEL: Form ")
+                    level_end = line.index(", SUBJECT(S):")
+                    level = int(line[level_start:level_end].strip())
 
-                subjects_start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
-                subjects_end = line.index(", IC/PASSPORT:")
-                subjects_of_student = line[subjects_start:subjects_end].strip()
-                subjects_list = subjects_of_student.split(", ")
+                    subjects_start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                    subjects_end = line.index(", IC/PASSPORT:")
+                    subjects_of_student = line[subjects_start:subjects_end].strip()
+                    subjects_list = subjects_of_student.split(", ")
 
-                lv_price = level * 1000
-                subjects_price = sum(subjects.get(subject, 0) for subject in subjects_list)
+                    lv_price = level * 1000
+                    subjects_price = sum(subjects.get(subject, 0) for subject in subjects_list)
 
-                total_price = lv_price + subjects_price
-                print(f"Student should pay: RM {total_price}")
+                    total_price = lv_price + subjects_price
+                    print(f"Student should pay: RM {total_price}")
 
-                if input("Confirm payment (Yes/No): ").lower() == "yes":
-                    receipt = f'''
-----------Receipt----------
-Excellent Tuition Centre (ETC)
+                    if input("Confirm payment (Yes/No): ").lower() == "yes":
+                        receipt = f'''
+    ----------Receipt----------
+    Excellent Tuition Centre (ETC)
 
-Level price (Form {level})___RM {lv_price}
-Subjects price:
-'''
-                    for subject in subjects_list:
-                        receipt += f"{subject}___RM {subjects.get(subject, 0)}\n"
+    Level price (Form {level})___RM {lv_price}
+    Subjects price:
+    '''
+                        for subject in subjects_list:
+                            receipt += f"{subject}___RM {subjects.get(subject, 0)}\n"
 
-                    receipt += f'''
-Overall total price = RM {total_price}
-Payment status updated to paid
-'''
-                    print(receipt)
+                        receipt += f'''
+    Overall total price = RM {total_price}
+    Payment status updated to paid
+    '''
+                        print(receipt)
 
-                    with open(databases["payment_status.txt"], "r") as pd:
-                        lines = pd.readlines()
+                        with open(databases["payment_status.txt"], "r") as pd:
+                            lines = pd.readlines()
 
-                    with open(databases["payment_status.txt"], "w") as pd:
-                        pd.writelines(line for line in lines if nm.title() not in line)
-                        pd.write(f"STUDENT NAME: {nm.title()}, PAYMENT STATUS: Paid\n")
-                return
+                        with open(databases["payment_status.txt"], "w") as pd:
+                            pd.writelines(line for line in lines if nm.title() not in line)
+                            pd.write(f"STUDENT NAME: {nm.title()}, PAYMENT STATUS: Paid\n")
+                    return
+        except Exception as e:
+            print(f"An error has occurred while trying to accept student pament {e}")
 
     def delete_student(nm):
         def update_file(file_path, name_format):
-            with open(file_path, "r") as file:
-                lines = file.readlines()
-            with open(file_path, "w") as file:
-                file.writelines(line for line in lines if name_format not in line)
+            try:
+                with open(file_path, "r") as file:
+                    lines = file.readlines()
+                with open(file_path, "w") as file:
+                    file.writelines(line for line in lines if name_format not in line)
+            except Exception as e:
+                print(f"An error occurred while deleting the student: {e}")
 
         update_file(databases["main_database.txt"], nm.lower())
         update_file(databases["student_database.txt"], nm.title())
         update_file(databases["payment_status.txt"], nm.title())
 
-    def change_profile(un, pw):
+    def change_profile(username, new_password):
         try:
-            with open(databases["main_database.txt"], "r+") as md:
+            with open(databases["main_database.txt"], "r") as md:
                 lines = md.readlines()
-                md.seek(0)
-                md.truncate()
-                md.writelines(line for line in lines if un.lower().strip() not in line.lower().strip())
-                md.write(f"USERNAME: {un.lower().strip()}, PASSWORD: {pw}, STATUS: Receptionist\n")
 
-            print("Profile updated successfully.")
+            with open(databases["main_database.txt"], "w") as md:
+                for line in lines:
+                    if f"USERNAME: {username}" in line:
+                        parts = line.split(",")
+                        if len(parts) > 1:
+                            parts[1] = f" PASSWORD: {new_password}"
+                            new_line = ",".join(parts)
+                            md.write(new_line + "\n")
+                        else:
+                            md.write(line)
+                    else:
+                        md.write(line)
+            print("Password updated successfully.")
         except Exception as e:
             print(f"An error occurred while changing the profile: {e}")
 
@@ -160,7 +180,7 @@ Payment status updated to paid
                 lines = liu.readlines()
                 for line in lines:
                     if "(" in line:
-                        username = line[0:line.index("(")]
+                        username = line.split()[0]
                         break
 
             if not username:
@@ -173,7 +193,7 @@ Payment status updated to paid
             with open(databases["main_database.txt"], "r") as md: 
                 lines = md.readlines()
                 for line in lines:
-                    if username in line and old_password in line:
+                    if f"USERNAME: {username}" in line and f"PASSWORD: {old_password}"  in line:
                         valid_user = True
                         break
 
@@ -197,20 +217,22 @@ Payment status updated to paid
         except Exception as e:
             print(f"An error occurred while quitting the program: {e}")
 
-    switch = {
-        1: register_student,
-        2: update_subject_enrollment_func,
-        3: accept_student_payment_func,
-        4: delete_student_func,
-        5: update_profile,
-        6: quit_program
-    }
+    while True:
+        print(receptionist_message)
+        try:
+            receptionist_function = int(input("Type (in number) which function to execute: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
 
-    print(receptionist_message)
-    receptionist_function = int(input("Type (in number) which function to execute: "))
+        switch = {
+            1: register_student,
+            2: update_subject_enrollment_func,
+            3: accept_student_payment_func,
+            4: delete_student_func,
+            5: update_profile,
+            6: quit_program
+        }
 
-    func = switch.get(receptionist_function, lambda: print("Invalid input"))
-    func()
-
-if __name__ == "__main__":
-    main()
+        func = switch.get(receptionist_function, lambda: print("Invalid input"))
+        func()

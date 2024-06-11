@@ -88,16 +88,24 @@ def main():
         except Exception as e:
             print(f"An error occurred while viewing the monthly income: {e}")
 
-    def change_profile(un, pw):
+    def change_profile(username, new_password):
         try:
-            with open(databases["main_database.txt"], "r+") as md:
+            with open(databases["main_database.txt"], "r") as md:
                 lines = md.readlines()
-                md.seek(0)
-                md.truncate()
-                md.writelines(line for line in lines if un.lower().strip() not in line.lower().strip())
-                md.write(f"USERNAME: {un.lower().strip()}, PASSWORD: {pw}, STATUS: Admin\n")
 
-            print("Profile updated successfully.")
+            with open(databases["main_database.txt"], "w") as md:
+                for line in lines:
+                    if f"USERNAME: {username}" in line:
+                        parts = line.split(",")
+                        if len(parts) > 1:
+                            parts[1] = f" PASSWORD: {new_password}"
+                            new_line = ",".join(parts)
+                            md.write(new_line + "\n")
+                        else:
+                            md.write(line)
+                    else:
+                        md.write(line)
+            print("Password updated successfully.")
         except Exception as e:
             print(f"An error occurred while changing the profile: {e}")
 
@@ -146,7 +154,7 @@ def main():
                 lines = liu.readlines()
                 for line in lines:
                     if "(" in line:
-                        username = line[0:line.index("(")]
+                        username = line.split()[0]
                         break
 
             if not username:
@@ -159,7 +167,7 @@ def main():
             with open(databases["main_database.txt"], "r") as md: 
                 lines = md.readlines()
                 for line in lines:
-                    if username in line and old_password in line:
+                    if f"USERNAME: {username}" in line and f"PASSWORD: {old_password}"  in line:
                         valid_user = True
                         break
 
@@ -201,5 +209,3 @@ def main():
 
         func = switch.get(admin_function, lambda: print("Invalid input"))
         func()
-
-        pass
