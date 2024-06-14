@@ -170,6 +170,3 @@ def main():
 
         func = switch.get(tutor_function, lambda: print("Invalid input"))
         func()
-
-if __name__ == "__main__":
-    main()

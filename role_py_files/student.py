@@ -1,187 +1,162 @@
-# Import tutor/student subjects from another Python script
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from peripheral_py_files.income_report import subjects
+from peripheral_py_files.user_messages import student_message
+from peripheral_py_files.database_absolute_paths import databases
 
 def main():
-    # Define a function for student to view their classes
-    def view_schedule(lv, sjs):
-        # Read classes_database.txt
-        with open("classes_database.txt", "r") as cd:
-            lines = cd.readlines()
+    def get_logged_in_student_details():
+        try:
+            username = ""
+            with open(databases["logged_in_users.txt"], "r") as liu: 
+                for line in liu:
+                    if "(" in line:
+                        username = line.split()[0]
+                        break
 
-        # Checks every line containing specified level and subjects, also prints the schedule for viewing
-        print("---Schedule---")
-        for line in lines:
-            for subject in sjs:
-                if ("Form " + str(lv)) in line and subject in line:
-                    print(line.strip()) 
+            if not username:
+                print("No logged-in user found")
+                return None, None, None
 
-    # Define a function for student to send request to change subject enrollment
-    def send_request(nm, sjs):
-        with open("student_database.txt", "r") as sd:
-            lines = sd.readlines()
+            with open(databases["student_database.txt"], "r") as sd:
+                for line in sd:
+                    if username.title() in line:
+                        level_start = line.index("LEVEL: Form ") + len("LEVEL: Form ")
+                        level_end = line.index(", SUBJECT(S):")
+                        level = int(line[level_start:level_end].strip())
 
-        # Confirms whether requester is a student or not
-        for line in lines:
-            if nm.title() not in line:
-                print("Student Name not in Database")
+                        subjects_start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                        subjects_end = line.index(", IC/PASSPORT:")
+                        subjects_of_student = line[subjects_start:subjects_end].strip()
+                        subjects_list = subjects_of_student.split(", ")
+                        return username, level, subjects_list
+
+            print("Student details not found in the database")
+            return None, None, None
+
+        except Exception as e:
+            print(f"An error occurred while retrieving student details: {e}")
+            return None, None, None
+
+    def view_schedule():
+        try:
+            username, level, subjects_list = get_logged_in_student_details()
+            if username is None:
                 return
 
-        # Confirms whether inputted subjects are valid or not
-        for subject in sjs:
-            if subject.title() not in ["Bahasa Melayu", "English Language", "History", "Mathematics", "Science"]:
-                print("Subject input is invalid")
+            found_classes = False
+            with open(databases["classes_database.txt"], "r") as cd:
+                for line in cd:
+                    if f"Form {level}" in line and any(subject in line for subject in subjects_list):
+                        print(line.strip())
+                        found_classes = True
+
+            if not found_classes:
+                print("No classes found")
+        except Exception as e:
+            print(f"An error occurred while viewing schedule: {e}")
+
+    def send_request():
+        try:
+            username, _, subjects_list = get_logged_in_student_details()
+            if username is None or subjects_list is None:
                 return
-        
-        # Append request into pending_requests.txt 
-        with open("pending_requests.txt", "a") as pr:
-            pr.write(f"{nm.title()} requested change of enrolled subject into {sjs}\n")
 
-        # Tell user that his/her request is already included in pending_requests.txt
-        print("Request is sent, please wait for receptionist's update.")
+            for subject in subjects_list:
+                if subject.title() not in subjects.keys():
+                    print("Subject input is invalid")
+                    return
+                
+            with open(databases["student_database.txt"], "r") as sd:
+                student_found = any(username.title() in line for line in sd)
+                if not student_found:
+                    print("Student Name not in Database")
+                    return
+            for subject in subjects_list:
+                if subject.title() not in subjects:
+                    print("Subject input is invalid")
+                    return
+            with open(databases["pending_requests.txt"], "a") as pr:
+                pr.write(f"{username.title()} requested change of enrolled subject into {subjects_list}\n")
+            print("Request is sent, please wait for receptionist's update.")
+        except Exception as e:
+            print(f"An error occurred while sending request: {e}")
 
-    # Define a function for student to delete the pending request of change
-    def delete_request(nm):
-        with open("pending_requests.txt", "r") as pr:
-            lines = pr.readlines()
+    def delete_request(name):
+        try:
+            with open(databases["pending_requests.txt"], "r") as pr:
+                lines = pr.readlines()
+            with open(databases["pending_requests.txt"], "w") as pr:
+                for line in lines:
+                    if name.title() not in line:
+                        pr.write(line)
+            print("Request successfully deleted")
+        except Exception as e:
+            print(f"An error occurred while deleting request: {e}")
 
-        with open("pending_requests.txt", "w") as pr:
-            for line in lines:
-                if nm.title() in line:
-                    continue
-                pr.write(line)
-
-    # Define a function for student to view payment status with due balance
-    def view_payment_status(nm, sjs):
-        # Read payment_status.txt
-        with open("payment_status.txt", "r") as ps:
-            lines = ps.readlines()
-
-        # Check the payment status of the student
-        for line in lines:
-            if nm.title() in line:
-                payment_status_section_start, payment_status_section_end = line.index("PAYMENT STATUS: ") + len("PAYMENT STATUS: "), len(line)
-                if line[payment_status_section_start:payment_status_section_end] == "Unpaid":
-                    # Payment status is unpaid
-                    try:
-                        total_balance = float(subjects[sjs[0]] + subjects[sjs[1]] + subjects[sjs[2]])
-                    except:
-                        print("Invalid Subject(s)")
-                        exit()
-                    print(f"PAYMENT STATUS: Unpaid, TOTAL BALANCE DUE: RM {total_balance}")
-                else:
-                    # Payment status is paid
-                    print("PAYMENT STATUS: Paid")
-            else:
+    def view_payment_status(name, subjects_list):
+        try:
+            with open(databases["payment_status.txt"], "r") as ps:
+                for line in ps:
+                    if name.title() in line:
+                        payment_status = line.split("PAYMENT STATUS: ")[-1].strip()
+                        if payment_status == "Unpaid":
+                            total_balance = sum(subjects.get(subj.title(), 0) for subj in subjects_list)
+                            print(f"PAYMENT STATUS: Unpaid, TOTAL BALANCE DUE: RM {total_balance}")
+                        else:
+                            print("PAYMENT STATUS: Paid")
+                        return
                 print("Name not in database")
+        except Exception as e:
+            print(f"An error occurred while viewing payment status: {e}")
 
-    # Define a function for student to change their profile
-    def change_profile(un, pw, sd_i):
-        # Read main_database.txt
-        with open("main_database.txt", "r") as md:
-            lines = md.readlines()
+    def change_profile(username, password, student_info):
+        try:
+            with open(databases["main_database.txt"], "r") as md:
+                lines = md.readlines()
+            with open(databases["main_database.txt"], "w") as md:
+                md.writelines(line for line in lines if username.lower() not in line)
+                md.write(f"USERNAME: {username.lower()}, PASSWORD: {password}, STATUS: Receptionist\n")
+            with open(databases["student_database.txt"], "r") as sd:
+                lines = sd.readlines()
+            subjects_list = []
+            with open(databases["student_database.txt"], "w") as sd:
+                for line in lines:
+                    if username.title() in line:
+                        subject_start = line.index("SUBJECT(S): [") + len("SUBJECT(S): [")
+                        subject_end = line.index("], IC/PASSPORT:")
+                        subjects_list.append(line[subject_start:subject_end])
+                        continue
+                    sd.write(line)
+                sd.write(f"STUDENT NAME: {username.title()}, LEVEL: Form {student_info[4]}, SUBJECT(S): {subjects_list[0]}, IC/PASSPORT: {student_info[0]}, EMAIL: {student_info[1]}, CONTACT NUMBER: {student_info[2]}, ADDRESS: {student_info[3]}, MONTH OF ENROLLMENT: {student_info[5].title()} ")
+            print("Profile successfully updated")
+        except Exception as e:
+            print(f"An error occurred while changing profile: {e}")
 
-        # Write the updated main_database.txt in which student is (temporarily) removed
-        with open("main_database.txt", "w") as md:
-            for line in lines:
-                if un.lower() in line:
-                    continue
-                md.write(line)
+    while True:
+        print(student_message)
 
-        # Write the more updated main_database.txt in which student is added back again with their new password
-        with open("main_database.txt", "a") as md:
-            md.write(f"USERNAME: {un.lower()}, PASSWORD: {pw}, STATUS: Receptionist")
+        try:
+            student_function = int(input("Type (in number) which function to execute: "))
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+            continue
 
-        # Read student_database.txt
-        with open("student_database.txt", "r") as sd:
-            lines = sd.readlines()
-        
-        # Initializes empty list to store student's subjects
-        subjects_list = []
+        switch = {
+            1: lambda: view_schedule(),
+            2: lambda: send_request(),
+            3: lambda: delete_request(input("Student name: ")),
+            4: lambda: view_payment_status(input("Student name: "), [input(f"Subject {i}: ").title() for i in range(1, 4)]),
+            5: lambda: change_profile(
+                input("Student username: "),
+                input("Student new password: "),
+                [input("IC/Passport: "), input("Email: "), input("Contact number: "), input("Address: "), input("Level: "), input("Month of enrollment: ")]
+            )
+        }
 
-        # Append student's subjects to previous list & temporarily remove student from student_database.txt
-        with open("student_database.txt", "w") as sd:
-            for line in lines:
-                if un.title() in line:
-                    subject_section_start, subject_section_end = line.index("SUBJECT(S): [") + len("SUBJECT(S): ["), line.index("], IC/PASSPORT:")
-                    subjects_list.append(line[subject_section_start:subject_section_end])
-                    continue
-                sd.write(line)
+        func = switch.get(student_function, lambda: print("Invalid input"))
+        func()
 
-        # Add the student back to student_database.txt with new data
-        with open("student_database.txt", "a") as sd:
-            sd.write(f"STUDENT NAME: {un.title()}, LEVEL: Form {sd_i[4]}, SUBJECT(S): {subjects_list[0]}, IC/PASSPORT: {sd_i[0]}, EMAIL: {sd_i[1]}, CONTACT NUMBER: {sd_i[2]}, ADDRESS: {sd_i[3]}, MONTH OF ENROLLMENT: {sd_i[5].title()} ")
-
-    # Tutor message to show the functions they could use
-
-    print(student_message)
-
-    # Get the student's choice of function to execute
-    student_function = int(input("Type (in number) which function to execute: "))
-
-    if student_function == 1:
-        # View schedule of classes (Suggestion: input prompts while reading student_database.txt)
-        # Prompt for student's level
-        student_level = int(input("Student level: "))
-
-        # Prompt for all three student subjects
-        student_subjects = []
-        for i in range(1, 4):
-            prompt_subject = input(f"Subject {i}: ")
-            student_subjects.append(prompt_subject.title())
-
-        view_schedule(student_level, student_subjects)
-    elif student_function == 2:
-        # Request receptionist for change on enrolled subject
-        # Prompt for student name
-        student_name = input("Student name: ")
-
-        # Tell user that the 3 inputted subjects doesn't have to be all new subjects
-        print("Input existing/the same subject if that subject want to be kept")
-
-        # Prompt for all three new student subjects
-        student_subjects = []
-        for i in range(1,4):
-            prompt_subject = input(f"Subject {i}: ")
-            student_subjects.append(prompt_subject.title())
-
-        send_request(student_name, student_subjects)
-    elif student_function == 3:
-        # Prompt for student name
-        student_name = input("Student name: ")
-
-        delete_request(student_name)
-    elif student_function == 4:
-        # View payment status (Suggestion: input prompts while reading student_database.txt)
-        # Prompt for student name
-        student_name = input("Student name: ")
-
-        # Prompt for all three student subjects
-        student_subjects = []
-        for i in range(1,4):
-            prompt_subject = input(f"Subject {i}: ")
-            student_subjects.append(prompt_subject.title())
-
-        view_payment_status(student_name, student_subjects)
-    elif student_function == 5:
-        # Let student update their profile (Suggestion: input prompts while reading student_database.txt)
-        # Print message to tell student that they don't have to type new informations for all the prompts
-        print("Type the same information if you don't want to modify them.")
-
-        # Prompt for student username and password
-        student_username = input("Student username: ")
-        student_new_password = input("Student new password: ")
-
-        # Prompt for student's IC/Passport, email, contact number, address, level, and month of enrollment. Then add all of those informations to a list.
-        student_infos = []
-        ic_passport = input("IC/Passport: ")
-        email = input("Email: ")
-        contact_number = input("Contact number: ")
-        address = input("Address: ")
-        level = input("Level: ")
-        month_of_enrollment = input("Month of enrollment: ")
-        student_infos.extend([ic_passport, email, contact_number, address, level, month_of_enrollment])
-
-        change_profile(student_username, student_new_password, student_infos)
-    else:
-        # Student inputted something else put of the option
-        print("Invalid input")
+if __name__ == "__main__":
+    main()
