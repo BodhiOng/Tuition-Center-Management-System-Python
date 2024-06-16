@@ -93,15 +93,32 @@ def main():
         except Exception as e:
             print(f"An error occurred while deleting request: {e}")
 
-    def view_payment_status(name, subjects_list):
+    def view_payment_status():
         try:
+            username = ""
+            with open(databases["logged_in_users.txt"], "r") as liu: 
+                lines = liu.readlines()
+                for line in lines:
+                    if "(" in line:
+                        username = line.split()[0].title()
+                        break
+
+            student_subjects = []
+            with open(databases["student_database.txt"], "r") as sd:
+                for line in sd:
+                    if f"STUDENT NAME: {username}" in line:
+                        subjects_part = line.split("SUBJECT(S): ")[-1].split(", IC/PASSPORT")[0]
+                        student_subjects = [subject.strip() for subject in subjects_part.split(",")]
+                        break
+            subjects_price = sum(subjects.get(sj, 0) for sj in student_subjects)
+
             with open(databases["payment_status.txt"], "r") as ps:
                 for line in ps:
-                    if name.title() in line:
+                    if username in line:
                         payment_status = line.split("PAYMENT STATUS: ")[-1].strip()
                         if payment_status == "Unpaid":
                             total_balance = sum(subjects.get(subj.title(), 0) for subj in subjects_list)
-                            print(f"PAYMENT STATUS: Unpaid, TOTAL BALANCE DUE: RM {total_balance}")
+                            print(f"PAYMENT STATUS: Unpaid, TOTAL BALANCE DUE: RM {subjects_price}")
                         else:
                             print("PAYMENT STATUS: Paid")
                         return
@@ -109,25 +126,41 @@ def main():
         except Exception as e:
             print(f"An error occurred while viewing payment status: {e}")
 
-    def change_profile(username, password, student_info):
+    def change_profile(username, password):
         try:
+            student_info = [
+                input("IC/Passport: "), 
+                input("Email: "), 
+                input("Contact number: "), 
+                input("Address: "), 
+                input("Level: "), 
+                input("Month of enrollment: ").title()]
+
             with open(databases["main_database.txt"], "r") as md:
                 lines = md.readlines()
+
             with open(databases["main_database.txt"], "w") as md:
-                md.writelines(line for line in lines if username.lower() not in line)
-                md.write(f"USERNAME: {username.lower()}, PASSWORD: {password}, STATUS: Receptionist\n")
+                for line in lines:
+                    if f"USERNAME: {username.lower()}" not in line:
+                        md.write(line)
+                md.write(f"USERNAME: {username.lower()}, PASSWORD: {password}, STATUS: Student\n")
+
+            subjects_list = []
             with open(databases["student_database.txt"], "r") as sd:
                 lines = sd.readlines()
-            subjects_list = []
+
             with open(databases["student_database.txt"], "w") as sd:
                 for line in lines:
-                    if username.title() in line:
-                        subject_start = line.index("SUBJECT(S): [") + len("SUBJECT(S): [")
-                        subject_end = line.index("], IC/PASSPORT:")
-                        subjects_list.append(line[subject_start:subject_end])
-                        continue
-                    sd.write(line)
-                sd.write(f"STUDENT NAME: {username.title()}, LEVEL: Form {student_info[4]}, SUBJECT(S): {subjects_list[0]}, IC/PASSPORT: {student_info[0]}, EMAIL: {student_info[1]}, CONTACT NUMBER: {student_info[2]}, ADDRESS: {student_info[3]}, MONTH OF ENROLLMENT: {student_info[5].title()} ")
+                    if f"STUDENT NAME: {username.title()}" in line:
+                        subject_start = line.index("SUBJECT(S): ") + len("SUBJECT(S): ")
+                        subject_end = line.index(", IC/PASSPORT:")
+                        subjects_list = line[subject_start:subject_end].split(', ')
+                    else:
+                        sd.write(line)
+
+                subjects_str = ", ".join(subjects_list)
+                sd.write(f"STUDENT NAME: {username.title()}, LEVEL: Form {student_info[4]}, SUBJECT(S): {subjects_str}, IC/PASSPORT: {student_info[0]}, EMAIL: {student_info[1]}, CONTACT NUMBER: {student_info[2]}, ADDRESS: {student_info[3]}, MONTH OF ENROLLMENT: {student_info[5]}\n")
+        
             print("Profile successfully updated")
         except Exception as e:
             print(f"An error occurred while changing profile: {e}")
@@ -136,6 +169,49 @@ def main():
         print(subjects_list)
         new_sj_list = [input(f"Subject {i}: ").title() for i in range(1, 4)]
         send_request(new_sj_list)
+
+    def update_profile():
+        try:
+            username = ""
+            with open(databases["logged_in_users.txt"], "r") as liu: 
+                lines = liu.readlines()
+                for line in lines:
+                    if "(" in line:
+                        username = line.split()[0]
+                        break
+
+            if not username:
+                print("No valid logged in user found.")
+                return
+            
+            old_password = input("Re-enter your old password to verify: ").strip()
+            valid_user = False
+
+            with open(databases["main_database.txt"], "r") as md: 
+                lines = md.readlines()
+                for line in lines:
+                    if f"USERNAME: {username}" in line and f"PASSWORD: {old_password}"  in line:
+                        valid_user = True
+                        break
+
+            if not valid_user:
+                print("Invalid username or password.")
+                return
+            
+            new_password = input("Enter your new password: ").strip()
+            change_profile(username, new_password)
+        except Exception as e:
+            print(f"An error occurred while updating the profile: {e}")
+
+    def quit_program():
+        try:
+            with open(databases["logged_in_users.txt"], "w") as file:
+                file.truncate(0)
+
+            print("Exiting program....")
+            sys.exit()
+        except Exception as e:
+            print(f"An error occurred while quitting the program: {e}")
 
     while True:
         print(student_message)
@@ -150,12 +226,9 @@ def main():
             1: lambda: view_schedule(),
             2: lambda: handle_send_request(),
             3: lambda: delete_request(input("Student name: ")),
-            4: lambda: view_payment_status(input("Student name: "), [input(f"Subject {i}: ").title() for i in range(1, 4)]),
-            5: lambda: change_profile(
-                input("Student username: "),
-                input("Student new password: "),
-                [input("IC/Passport: "), input("Email: "), input("Contact number: "), input("Address: "), input("Level: "), input("Month of enrollment: ")]
-            )
+            4: lambda: view_payment_status(),
+            5: lambda: update_profile(),
+            6: lambda: quit_program()
         }
 
         func = switch.get(student_function, lambda: print("Invalid input"))
