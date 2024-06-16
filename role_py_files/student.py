@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from peripheral_py_files.income_report import subjects
-from peripheral_py_files.user_messages import student_message
+from peripheral_py_files.user_messages import student_message, subjects_list
 from peripheral_py_files.database_absolute_paths import databases
 
 def main():
@@ -57,13 +57,13 @@ def main():
         except Exception as e:
             print(f"An error occurred while viewing schedule: {e}")
 
-    def send_request():
+    def send_request(new_subjects_list):
         try:
-            username, _, subjects_list = get_logged_in_student_details()
-            if username is None or subjects_list is None:
+            username, _, _= get_logged_in_student_details()
+            if username is None or new_subjects_list is None:
                 return
 
-            for subject in subjects_list:
+            for subject in new_subjects_list:
                 if subject.title() not in subjects.keys():
                     print("Subject input is invalid")
                     return
@@ -73,12 +73,10 @@ def main():
                 if not student_found:
                     print("Student Name not in Database")
                     return
-            for subject in subjects_list:
-                if subject.title() not in subjects:
-                    print("Subject input is invalid")
-                    return
+
             with open(databases["pending_requests.txt"], "a") as pr:
-                pr.write(f"{username.title()} requested change of enrolled subject into {subjects_list}\n")
+                subject_str = ", ".join(new_subjects_list)
+                pr.write(f"{username.title()} requested change of enrolled subject into {subject_str}\n")
             print("Request is sent, please wait for receptionist's update.")
         except Exception as e:
             print(f"An error occurred while sending request: {e}")
@@ -134,6 +132,11 @@ def main():
         except Exception as e:
             print(f"An error occurred while changing profile: {e}")
 
+    def handle_send_request():
+        print(subjects_list)
+        new_sj_list = [input(f"Subject {i}: ").title() for i in range(1, 4)]
+        send_request(new_sj_list)
+
     while True:
         print(student_message)
 
@@ -145,7 +148,7 @@ def main():
 
         switch = {
             1: lambda: view_schedule(),
-            2: lambda: send_request(),
+            2: lambda: handle_send_request(),
             3: lambda: delete_request(input("Student name: ")),
             4: lambda: view_payment_status(input("Student name: "), [input(f"Subject {i}: ").title() for i in range(1, 4)]),
             5: lambda: change_profile(
