@@ -1,6 +1,6 @@
 # Tuition Center Management System (CLI-based program)
 
-This project is a Python-based tuition center management system developed as part of the CT108-3-1-PYP (Programming with Python) group assignment for the Asia Pacific University (APU) in 2023.
+This is a tuition center management system developed as part of the CT108-3-1-PYP (Programming with Python) group assignment for the Asia Pacific University (APU) in 2023.
 
 ## How to run the program
 Run `login.py` and log in with the username & password in `main_database.txt`. Note that each one of the .py roles is connected to certain .txt files in which the direct relation could be seen by reading the functions in the script or assessing the comments typed. Thus, if further inputs are required from the role before executing the functionality, please fill the inputs with information that is available on the .txt files unless the prompt demands an input that is different from the original information, just follow the given instructions accordingly. 
